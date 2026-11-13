@@ -1,0 +1,5 @@
+config.json
+paused.json
+__pycache__/
+*.png
+*.lnk
