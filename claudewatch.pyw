@@ -783,6 +783,7 @@ class App:
             snap = self.q.get_nowait()
         if snap:
             self.render(snap)
+            self.keep_on_screen()
         self.root.after(300, self.poll)
 
     # -- header buttons --------------------------------------------------
@@ -804,6 +805,26 @@ class App:
         self.b_mini.config(text="+" if on else "\u2013")
         if save:
             self.save_cfg()
+
+    def keep_on_screen(self):
+        """Pull the window back inside the desktop: a position saved on a monitor that is gone,
+        or a window that grew past the bottom edge, would otherwise leave it out of sight."""
+        try:
+            import ctypes
+            gsm = ctypes.windll.user32.GetSystemMetrics
+            vx, vy, vw, vh = gsm(76), gsm(77), gsm(78), gsm(79)      # the virtual desktop
+            if vw <= 0 or vh <= 0:
+                return
+            r = self.root
+            r.update_idletasks()
+            w, h, x, y = r.winfo_width(), r.winfo_height(), r.winfo_x(), r.winfo_y()
+            bottom = vy + vh - 48                                     # clear of the taskbar
+            nx = min(max(x, vx), vx + vw - w)
+            ny = min(max(y, vy), bottom - h)
+            if (nx, ny) != (x, y):
+                r.geometry("+%d+%d" % (nx, max(ny, vy)))
+        except (OSError, AttributeError, tk.TclError):
+            pass
 
     def save_cfg(self):
         try:
